@@ -1,0 +1,34 @@
+# Production configuration overrides
+# This file extends config.yaml for production environment
+
+# Production logging
+logging:
+  level: "INFO"
+  format: "json"  # Structured logging for log aggregation
+  file: "/var/log/anonyma/anonyma.log"
+  console: true
+
+# Stricter detection
+detection:
+  confidence_threshold: 0.8
+  use_ensemble: true
+  use_flair: true
+
+# Optimized performance
+performance:
+  enable_caching: true
+  cache_ttl: 7200  # 2 hours
+  enable_parallel_processing: true
+  max_workers: 8
+
+# Enhanced security
+security:
+  encrypt_mappings: true
+  sanitize_logs: true
+  max_upload_size: 104857600  # 100MB
+
+# Model settings for production
+models:
+  flair:
+    device: "cuda"  # Use GPU if available
+    batch_size: 64

@@ -2,13 +2,21 @@ from presidio_analyzer import AnalyzerEngine
 from typing import List, Dict, Any
 import re
 import spacy
+from ..logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 class PIIDetector:
     def __init__(self):
         try:
             self.analyzer = AnalyzerEngine()
-        except Exception:
-            print("⚠️  Presidio non disponibile, usando solo pattern personalizzati")
+            logger.info("Presidio AnalyzerEngine initialized successfully")
+        except Exception as e:
+            logger.warning(
+                "Presidio not available, using custom patterns only",
+                extra={"extra_fields": {"error": str(e)}}
+            )
             self.analyzer = None
         
         # Pattern italiani migliorati
@@ -28,8 +36,12 @@ class PIIDetector:
     
     def detect(self, text: str, language: str = 'it') -> List[Dict[str, Any]]:
         """Rileva informazioni sensibili nel testo"""
+        logger.debug(
+            "Starting PII detection",
+            extra={"extra_fields": {"text_length": len(text), "language": language}}
+        )
         detections = []
-        
+
         # Prova prima con Presidio (se disponibile)
         if self.analyzer:
             try:
@@ -45,14 +57,23 @@ class PIIDetector:
                         'text': text[result.start:result.end]
                     })
             except Exception as e:
-                print(f"⚠️  Presidio fallito: {e}")
+                logger.error(
+                    "Presidio analysis failed",
+                    extra={"extra_fields": {"error": str(e), "language": language}},
+                    exc_info=True
+                )
         
         # Aggiungi pattern italiani personalizzati
         detections.extend(self._detect_italian_patterns(text))
         
         # Rimuovi duplicati e sovrapposizioni
         detections = self._remove_duplicates(detections)
-        
+
+        logger.info(
+            "PII detection completed",
+            extra={"extra_fields": {"detections_count": len(detections)}}
+        )
+
         return detections
     
     def _detect_italian_patterns(self, text: str) -> List[Dict[str, Any]]:

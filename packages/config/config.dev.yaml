@@ -1,0 +1,24 @@
+# Development configuration overrides
+# This file extends config.yaml for development environment
+
+# More verbose logging for development
+logging:
+  level: "DEBUG"
+  format: "text"
+  file: "logs/anonyma_dev.log"
+  console: true
+
+# Lower confidence threshold for testing
+detection:
+  confidence_threshold: 0.6
+  use_flair: false  # Faster startup without Flair
+
+# Disable caching for development
+performance:
+  enable_caching: false
+  max_workers: 2
+
+# Security relaxed for dev
+security:
+  encrypt_mappings: false
+  sanitize_logs: false

@@ -1,0 +1,106 @@
+# Anonyma Core Configuration
+# Default configuration for Anonyma document anonymization system
+
+# Detection settings
+detection:
+  # Minimum confidence threshold for PII detections (0.0 to 1.0)
+  confidence_threshold: 0.7
+
+  # Use ensemble detector (combines multiple models for better accuracy)
+  use_ensemble: false
+
+  # Use Flair-based NER detector (requires Flair models downloaded)
+  use_flair: true
+
+  # Enable Italian-specific pattern matching
+  enable_italian_patterns: true
+
+  # Supported languages
+  supported_languages:
+    - it  # Italian
+    - en  # English
+
+# Model settings
+models:
+  # Flair NER models configuration
+  flair:
+    # Models to load (can be one or more)
+    models:
+      - "ner-multi"  # Multi-lingual model
+      # - "ner-english-ontonotes-fast"  # Uncomment for English support
+
+    # Directory for caching downloaded models
+    cache_dir: ".flair_cache"
+
+    # Device to use: "cpu" or "cuda" (GPU)
+    device: "cpu"
+
+    # Batch size for processing multiple texts
+    batch_size: 32
+
+  # Presidio analyzer settings
+  presidio:
+    enabled: true
+    # Language mapping (Presidio uses 'en' for Italian too)
+    language_map:
+      it: "en"
+      en: "en"
+
+# Anonymization settings
+anonymization:
+  # Default anonymization mode
+  # Options: "redact", "substitute", "visual_redact"
+  default_mode: "redact"
+
+  # Character used for redaction
+  redaction_character: "█"
+
+  # Enable reversibility for SUBSTITUTE mode
+  enable_reversibility: true
+
+  # Faker locales for generating fake data
+  faker_locales:
+    it: "it_IT"
+    en: "en_US"
+
+# Performance settings
+performance:
+  # Maximum text length to process (in characters)
+  max_text_length: 10000000  # 10MB
+
+  # Enable result caching
+  enable_caching: true
+
+  # Cache TTL in seconds (1 hour)
+  cache_ttl: 3600
+
+  # Enable parallel processing for batch operations
+  enable_parallel_processing: true
+
+  # Maximum number of worker processes for parallel processing
+  max_workers: 4
+
+# Logging settings
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+
+  # Output format: "text" or "json"
+  format: "text"
+
+  # Log file path (null for console only)
+  file: null
+
+  # Log to console
+  console: true
+
+# Security settings
+security:
+  # Encrypt mapping data in SUBSTITUTE mode
+  encrypt_mappings: false
+
+  # Sanitize log output (remove PII from logs)
+  sanitize_logs: true
+
+  # Maximum file upload size in bytes (50MB)
+  max_upload_size: 52428800
