@@ -37,6 +37,14 @@ from .config import settings
 from .redis_manager import redis_manager
 from .auth import get_api_key, check_rate_limit_dependency
 
+# Import routers
+try:
+    from .routers import auth as auth_router
+    AUTH_ROUTER_AVAILABLE = True
+except ImportError:
+    AUTH_ROUTER_AVAILABLE = False
+    logger.warning("Auth router not available")
+
 logger = get_logger(__name__)
 
 # ============================================================================
@@ -65,6 +73,11 @@ app.add_middleware(
 STATIC_DIR = Path(__file__).parent / "static"
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+# Include routers
+if AUTH_ROUTER_AVAILABLE:
+    app.include_router(auth_router.router, prefix="/api", tags=["authentication"])
+    logger.info("Auth router included")
 
 # ============================================================================
 # Global State

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -7,6 +8,8 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const navItems = [
     { path: '/', label: 'Text Anonymization', icon: '📝' },
@@ -14,6 +17,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { path: '/jobs', label: 'Jobs', icon: '⚙️' },
     { path: '/settings', label: 'Settings', icon: '⚙️' },
   ];
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -35,6 +43,30 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                 v1.0.0
               </span>
+              {user && (
+                <>
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                      user.role === 'admin'
+                        ? 'bg-purple-100 text-purple-800'
+                        : user.role === 'premium'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {user.role === 'admin' && '👑 Admin'}
+                    {user.role === 'premium' && '⭐ Premium'}
+                    {user.role === 'demo' && '🎯 Demo'}
+                  </span>
+                  <span className="text-sm text-gray-700">{user.username}</span>
+                  <button
+                    onClick={handleLogout}
+                    className="text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    Logout
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

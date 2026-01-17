@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # Redis for job storage and session management
+  redis:
+    image: redis:7-alpine
+    container_name: anonyma-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - anonyma-network
+
+  # PostgreSQL for user management and analytics
+  postgres:
+    image: postgres:15-alpine
+    container_name: anonyma-postgres
+    environment:
+      POSTGRES_DB: anonyma
+      POSTGRES_USER: anonyma
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-anonyma_secure_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    networks:
+      - anonyma-network
+
+  # Anonyma API Backend
+  api:
+    build:
+      context: ./packages
+      dockerfile: Dockerfile
+    container_name: anonyma-api
+    environment:
+      # Application
+      - ANONYMA_DEBUG=false
+      - ANONYMA_WORKERS=4
+
+      # Redis
+      - ANONYMA_REDIS_ENABLED=true
+      - ANONYMA_REDIS_HOST=redis
+      - ANONYMA_REDIS_PORT=6379
+
+      # Authentication
+      - ANONYMA_AUTH_ENABLED=true
+      - ANONYMA_MASTER_API_KEY=${MASTER_API_KEY}
+
+      # Rate Limiting
+      - ANONYMA_RATE_LIMIT_ENABLED=true
+      - ANONYMA_RATE_LIMIT_REQUESTS=100
+      - ANONYMA_RATE_LIMIT_WINDOW=3600
+
+      # Database
+      - DATABASE_URL=postgresql://anonyma:${POSTGRES_PASSWORD:-anonyma_secure_password}@postgres:5432/anonyma
+
+      # JWT
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+      # Demo Mode
+      - DEMO_MODE_ENABLED=true
+      - DEMO_DAILY_LIMIT=50
+      - DEMO_MONTHLY_LIMIT=500
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - postgres
+    volumes:
+      - ./packages:/app
+      - api_temp:/tmp/anonyma_api
+    restart: unless-stopped
+    networks:
+      - anonyma-network
+
+  # Anonyma Frontend
+  frontend:
+    build:
+      context: ./anonyma-frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000}
+    container_name: anonyma-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - anonyma-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: anonyma-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+      - frontend
+    restart: unless-stopped
+    networks:
+      - anonyma-network
+
+volumes:
+  redis_data:
+  postgres_data:
+  api_temp:
+
+networks:
+  anonyma-network:
+    driver: bridge

@@ -26,6 +26,15 @@ if (API_KEY) {
   apiClient.defaults.headers.common['X-API-Key'] = API_KEY;
 }
 
+// Add JWT token to requests if available
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('anonyma_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => response,
