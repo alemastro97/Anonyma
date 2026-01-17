@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  anonyma-core:
+    build: .
+    container_name: anonyma-core-test
+    volumes:
+      - .:/app
+      - flair-cache:/app/.flair_cache  # ← Cache persistente per Flair
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - FLAIR_CACHE_ROOT=/app/.flair_cache  # ← Configura cache Flair
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+
+  anonyma-test:
+    build: .
+    container_name: anonyma-core-quick-test
+    volumes:
+      - .:/app
+      - flair-cache:/app/.flair_cache  # ← Cache condivisa
+    environment:
+      - PYTHONPATH=/app
+      - FLAIR_CACHE_ROOT=/app/.flair_cache
+    command: python examples/simple_ensemble_test.py
+
+volumes:
+  anonyma-data:
+  flair-cache:  # ← Volume per cache Flair
