@@ -37,15 +37,22 @@ from .config import settings
 from .redis_manager import redis_manager
 from .auth import get_api_key, check_rate_limit_dependency
 
+# Initialize logger first
+logger = get_logger(__name__)
+
 # Import routers
 try:
     from .routers import auth as auth_router
+    from .routers import admin as admin_router
+    from .routers import payments as payments_router
     AUTH_ROUTER_AVAILABLE = True
+    ADMIN_ROUTER_AVAILABLE = True
+    PAYMENTS_ROUTER_AVAILABLE = True
 except ImportError:
     AUTH_ROUTER_AVAILABLE = False
-    logger.warning("Auth router not available")
-
-logger = get_logger(__name__)
+    ADMIN_ROUTER_AVAILABLE = False
+    PAYMENTS_ROUTER_AVAILABLE = False
+    logger.warning("Auth/Admin/Payments routers not available")
 
 # ============================================================================
 # FastAPI App Setup
@@ -78,6 +85,14 @@ if STATIC_DIR.exists():
 if AUTH_ROUTER_AVAILABLE:
     app.include_router(auth_router.router, prefix="/api", tags=["authentication"])
     logger.info("Auth router included")
+
+if ADMIN_ROUTER_AVAILABLE:
+    app.include_router(admin_router.router, prefix="/api", tags=["admin"])
+    logger.info("Admin router included")
+
+if PAYMENTS_ROUTER_AVAILABLE:
+    app.include_router(payments_router.router, prefix="/api", tags=["payments"])
+    logger.info("Payments router included")
 
 # ============================================================================
 # Global State

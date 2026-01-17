@@ -45,17 +45,19 @@ class DatabaseManager:
         """Get database connection"""
         return psycopg2.connect(self.connection_string, cursor_factory=RealDictCursor)
 
-    def execute_query(self, query: str, params: tuple = None, fetch_one: bool = False):
+    def execute_query(self, query: str, params: tuple = None, fetch_one: bool = False, fetch_results: bool = True):
         """Execute a query and return results"""
         try:
             conn = self.get_connection()
             cur = conn.cursor()
             cur.execute(query, params or ())
 
-            if fetch_one:
-                result = cur.fetchone()
-            else:
-                result = cur.fetchall()
+            result = None
+            if fetch_results:
+                if fetch_one:
+                    result = cur.fetchone()
+                else:
+                    result = cur.fetchall()
 
             conn.commit()
             cur.close()
@@ -129,7 +131,7 @@ class AuthManager:
 
         # Update last login
         update_query = "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = %s"
-        db_manager.execute_query(update_query, (user["id"],))
+        db_manager.execute_query(update_query, (user["id"],), fetch_results=False)
 
         return dict(user)
 
@@ -163,7 +165,7 @@ class AuthManager:
         """
         daily_limit = 999999 if role == "admin" else (1000 if role == "premium" else 50)
         monthly_limit = 999999 if role == "admin" else (10000 if role == "premium" else 500)
-        db_manager.execute_query(quota_query, (user["id"], daily_limit, monthly_limit))
+        db_manager.execute_query(quota_query, (user["id"], daily_limit, monthly_limit), fetch_results=False)
 
         return dict(user)
 
@@ -185,8 +187,8 @@ class UsageManager:
     def check_quota(user_id: str) -> bool:
         """Check if user has available quota"""
         # Reset quotas if needed
-        db_manager.execute_query("SELECT reset_daily_quotas()")
-        db_manager.execute_query("SELECT reset_monthly_quotas()")
+        db_manager.execute_query("SELECT reset_daily_quotas()", fetch_results=False)
+        db_manager.execute_query("SELECT reset_monthly_quotas()", fetch_results=False)
 
         query = """
             SELECT daily_used, daily_limit, monthly_used, monthly_limit
@@ -211,7 +213,7 @@ class UsageManager:
                 monthly_used = monthly_used + 1
             WHERE user_id = %s
         """
-        db_manager.execute_query(query, (user_id,))
+        db_manager.execute_query(query, (user_id,), fetch_results=False)
 
     @staticmethod
     def log_usage(
@@ -232,7 +234,8 @@ class UsageManager:
         """
         db_manager.execute_query(
             query,
-            (user_id, endpoint, method, status_code, processing_time, text_length, detections_count, mode)
+            (user_id, endpoint, method, status_code, processing_time, text_length, detections_count, mode),
+            fetch_results=False
         )
 
     @staticmethod

@@ -1,6 +1,18 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import {
+  FileText,
+  FileStack,
+  ListTodo,
+  CreditCard,
+  Settings as SettingsIcon,
+  Shield,
+  LogOut,
+  Lock
+} from 'lucide-react';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,10 +24,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
 
   const navItems = [
-    { path: '/', label: 'Text Anonymization', icon: '📝' },
-    { path: '/document', label: 'Document Processing', icon: '📄' },
-    { path: '/jobs', label: 'Jobs', icon: '⚙️' },
-    { path: '/settings', label: 'Settings', icon: '⚙️' },
+    { path: '/', label: 'Text Anonymization', icon: FileText, adminOnly: false },
+    { path: '/document', label: 'Document Processing', icon: FileStack, adminOnly: false },
+    { path: '/jobs', label: 'Jobs', icon: ListTodo, adminOnly: false },
+    { path: '/pricing', label: 'Pricing', icon: CreditCard, adminOnly: false },
+    { path: '/settings', label: 'Settings', icon: SettingsIcon, adminOnly: false },
+    { path: '/admin', label: 'Admin Dashboard', icon: Shield, adminOnly: true },
   ];
 
   const handleLogout = () => {
@@ -24,47 +38,57 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+    <div className="h-screen bg-gradient-to-br from-orange-50 via-white to-purple-50 flex flex-col overflow-hidden">
+      {/* Header with glassmorphism */}
+      <header className="glass-card sticky top-0 z-50 border-b border-white/20 backdrop-blur-xl flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-primary-600">
-                  🔒 Anonyma
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
+                  <Lock className="w-5 h-5 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+                  Anonyma
                 </h1>
               </div>
-              <p className="ml-4 text-sm text-gray-500 hidden sm:block">
+              <p className="ml-2 text-sm text-muted-foreground hidden md:block">
                 Enterprise PII Detection & Anonymization
               </p>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="hidden sm:flex">
                 v1.0.0
-              </span>
+              </Badge>
               {user && (
                 <>
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                  <Badge
+                    variant={
                       user.role === 'admin'
-                        ? 'bg-purple-100 text-purple-800'
+                        ? 'default'
                         : user.role === 'premium'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
+                        ? 'secondary'
+                        : 'outline'
+                    }
+                    className="flex items-center gap-1"
                   >
-                    {user.role === 'admin' && '👑 Admin'}
-                    {user.role === 'premium' && '⭐ Premium'}
-                    {user.role === 'demo' && '🎯 Demo'}
+                    {user.role === 'admin' && <Shield className="w-3 h-3" />}
+                    {user.role === 'admin' && 'Admin'}
+                    {user.role === 'premium' && 'Premium'}
+                    {user.role === 'demo' && 'Demo'}
+                  </Badge>
+                  <span className="text-sm text-foreground font-medium hidden sm:inline">
+                    {user.username}
                   </span>
-                  <span className="text-sm text-gray-700">{user.username}</span>
-                  <button
+                  <Button
                     onClick={handleLogout}
-                    className="text-sm text-gray-500 hover:text-gray-700"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
                   >
-                    Logout
-                  </button>
+                    <LogOut className="w-4 h-4" />
+                    <span className="hidden sm:inline">Logout</span>
+                  </Button>
                 </>
               )}
             </div>
@@ -72,45 +96,51 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200">
+      {/* Navigation with glassmorphism */}
+      <nav className="glass border-b border-white/10 sticky top-16 z-40 flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`
-                    inline-flex items-center px-1 pt-4 pb-3 border-b-2 text-sm font-medium
-                    ${
-                      isActive
-                        ? 'border-primary-500 text-primary-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }
-                  `}
-                >
-                  <span className="mr-2">{item.icon}</span>
-                  {item.label}
-                </Link>
-              );
-            })}
+          <div className="flex space-x-1 overflow-x-auto">
+            {navItems
+              .filter((item) => !item.adminOnly || user?.role === 'admin')
+              .map((item) => {
+                const isActive = location.pathname === item.path;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`
+                      inline-flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-medium whitespace-nowrap
+                      transition-all duration-200
+                      ${
+                        isActive
+                          ? 'border-primary-500 text-primary-600 bg-primary-50/50'
+                          : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-white/30'
+                      }
+                    `}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
           </div>
         </div>
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
+      <main className="flex-grow overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+          {children}
+        </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
+      {/* Footer with glassmorphism */}
+      <footer className="glass-card border-t border-white/10 flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-center text-sm text-gray-500">
-            Powered by <strong>Presidio</strong> + <strong>Flair NER</strong> +{' '}
-            <strong>Custom Patterns</strong>
+          <p className="text-center text-sm text-muted-foreground">
+            Powered by <span className="font-semibold text-primary-600">Presidio</span> + <span className="font-semibold text-secondary-600">Flair NER</span> +{' '}
+            <span className="font-semibold text-accent-600">Custom Patterns</span>
           </p>
         </div>
       </footer>

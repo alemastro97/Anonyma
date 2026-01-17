@@ -1,4 +1,5 @@
 from presidio_analyzer import AnalyzerEngine
+from presidio_analyzer.nlp_engine import NlpEngineProvider
 from typing import List, Dict, Any
 import re
 import spacy
@@ -10,8 +11,20 @@ logger = get_logger(__name__)
 class PIIDetector:
     def __init__(self):
         try:
-            self.analyzer = AnalyzerEngine()
-            logger.info("Presidio AnalyzerEngine initialized successfully")
+            # Configure NLP engine to use smaller models
+            configuration = {
+                "nlp_engine_name": "spacy",
+                "models": [
+                    {"lang_code": "en", "model_name": "en_core_web_sm"},
+                    {"lang_code": "it", "model_name": "it_core_news_sm"},
+                ],
+            }
+
+            provider = NlpEngineProvider(nlp_configuration=configuration)
+            nlp_engine = provider.create_engine()
+
+            self.analyzer = AnalyzerEngine(nlp_engine=nlp_engine)
+            logger.info("Presidio AnalyzerEngine initialized successfully with small models")
         except Exception as e:
             logger.warning(
                 "Presidio not available, using custom patterns only",

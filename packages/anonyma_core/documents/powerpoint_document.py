@@ -203,7 +203,7 @@ class PowerPointDocument(BaseDocument):
                 {"file_path": str(self.file_path)}
             )
 
-    def rebuild(self, anonymized_text: str, detections: List[Dict[str, Any]]) -> bytes:
+    def rebuild(self, anonymized_text: str, detections: List[Dict[str, Any]], mode: str = "redact") -> bytes:
         """
         Rebuild PowerPoint document with anonymized content.
 

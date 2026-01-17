@@ -21,5 +21,5 @@ COPY . .
 # Install package
 RUN pip install -e .
 
-# Default command
-CMD ["python", "examples/simple_ensemble_test.py"]
+# Default command - Start FastAPI server
+CMD ["uvicorn", "anonyma_api.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -9,6 +9,8 @@ import TextAnonymization from './pages/TextAnonymization';
 import DocumentProcessing from './pages/DocumentProcessing';
 import Jobs from './pages/Jobs';
 import Settings from './pages/Settings';
+import AdminDashboard from './pages/AdminDashboard';
+import Pricing from './pages/Pricing';
 
 function App() {
   return (
@@ -27,6 +29,8 @@ function App() {
                     <Route path="/document" element={<DocumentProcessing />} />
                     <Route path="/jobs" element={<Jobs />} />
                     <Route path="/settings" element={<Settings />} />
+                    <Route path="/pricing" element={<Pricing />} />
+                    <Route path="/admin" element={<AdminDashboard />} />
                   </Routes>
                 </Layout>
               </ProtectedRoute>

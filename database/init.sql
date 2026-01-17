@@ -195,9 +195,25 @@ LEFT JOIN usage_quotas uq ON u.id = uq.user_id
 LEFT JOIN usage_logs ul ON u.id = ul.user_id
 GROUP BY u.id, u.email, u.username, u.role, uq.daily_used, uq.daily_limit, uq.monthly_used, uq.monthly_limit;
 
+-- Subscriptions table for Stripe integration
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    stripe_subscription_id VARCHAR(255) UNIQUE,
+    stripe_customer_id VARCHAR(255),
+    status VARCHAR(50) DEFAULT 'active', -- 'active', 'cancelled', 'past_due'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    cancelled_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX idx_subscriptions_user_id ON subscriptions(user_id);
+CREATE INDEX idx_subscriptions_stripe_id ON subscriptions(stripe_subscription_id);
+
 COMMENT ON TABLE users IS 'User accounts with role-based access control';
 COMMENT ON TABLE api_keys IS 'API keys for programmatic access';
 COMMENT ON TABLE usage_logs IS 'Detailed usage tracking for analytics';
 COMMENT ON TABLE usage_quotas IS 'Per-user usage limits and quotas';
 COMMENT ON TABLE sessions IS 'Active user sessions with JWT tokens';
 COMMENT ON TABLE jobs IS 'Document processing jobs history';
+COMMENT ON TABLE subscriptions IS 'Stripe subscription management';

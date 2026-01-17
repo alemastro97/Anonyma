@@ -151,7 +151,7 @@ class BaseDocument(ABC):
 
     @abstractmethod
     def rebuild(
-        self, anonymized_text: str, detections: List[Dict[str, Any]]
+        self, anonymized_text: str, detections: List[Dict[str, Any]], mode: str = "redact"
     ) -> bytes:
         """
         Rebuild document with anonymized content.

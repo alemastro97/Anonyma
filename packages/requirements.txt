@@ -1,3 +1,16 @@
+# FastAPI and web server
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic-settings>=2.0.0
+python-multipart>=0.0.6
+
+# Authentication
+PyJWT>=2.8.0
+bcrypt==4.0.1
+passlib>=1.7.4
+python-jose[cryptography]>=3.3.0
+email-validator>=2.0.0
+
 # Core NLP - Flair based
 flair>=0.12.2
 torch>=2.0.0
@@ -46,3 +59,16 @@ python-pptx>=0.6.21
 
 # Email processing
 extract-msg>=0.45.0
+
+# Payments (Stripe)
+stripe>=7.0.0
+
+# Redis
+redis>=5.0.0
+
+# Database
+asyncpg>=0.29.0
+psycopg2-binary>=2.9.0
+
+# Email
+aiosmtplib>=3.0.0

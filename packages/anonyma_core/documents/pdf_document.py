@@ -285,16 +285,29 @@ class PDFDocument(BaseDocument):
                 f"OCR extraction failed: {str(e)}", {"file_path": str(self.file_path)}
             )
 
-    def rebuild(self, anonymized_text: str, detections: List[Dict[str, Any]]) -> bytes:
+    def rebuild(self, anonymized_text: str, detections: List[Dict[str, Any]], mode: str = "redact") -> bytes:
         """
         Rebuild PDF with anonymized content.
 
-        Note: This is a basic implementation that creates a new text-based PDF.
-        Advanced layout preservation requires more complex processing.
-
         Args:
             anonymized_text: Anonymized text
-            detections: List of detections (for reference)
+            detections: List of detections with positions
+            mode: Anonymization mode ('redact', 'substitute', 'visual_redact')
+
+        Returns:
+            PDF file bytes
+        """
+        if mode == "visual_redact":
+            return self._rebuild_visual_redaction(detections)
+        else:
+            return self._rebuild_text_based(anonymized_text)
+
+    def _rebuild_text_based(self, anonymized_text: str) -> bytes:
+        """
+        Rebuild PDF with anonymized text (for redact and substitute modes).
+
+        Args:
+            anonymized_text: Anonymized text content
 
         Returns:
             PDF file bytes
@@ -310,7 +323,7 @@ class PDFDocument(BaseDocument):
                 {"required_package": "reportlab"},
             )
 
-        logger.info("Rebuilding PDF with anonymized content")
+        logger.info("Rebuilding PDF with anonymized text")
 
         try:
             # Create PDF in memory
@@ -350,6 +363,179 @@ class PDFDocument(BaseDocument):
             raise DocumentProcessingError(
                 f"Failed to rebuild PDF: {str(e)}", {"file_path": str(self.file_path)}
             )
+
+    def _rebuild_visual_redaction(self, detections: List[Dict[str, Any]]) -> bytes:
+        """
+        Rebuild PDF with visual redaction (black boxes over PII in original document).
+
+        Args:
+            detections: List of detections with text positions
+
+        Returns:
+            PDF file bytes with black boxes drawn over PII
+        """
+        try:
+            from PyPDF2 import PdfReader, PdfWriter
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.colors import black
+        except ImportError:
+            raise DocumentProcessingError(
+                "PyPDF2 not installed. Install with: pip install PyPDF2",
+                {"required_package": "PyPDF2"},
+            )
+
+        logger.info("Applying visual redaction to original PDF")
+
+        try:
+            # Read original PDF
+            reader = PdfReader(str(self.file_path))
+            writer = PdfWriter()
+
+            # Process each page
+            for page_num, page in enumerate(reader.pages):
+                # Find detections for this page (pass page number explicitly)
+                page_detections = self._find_text_coordinates_by_num(page_num, detections)
+
+                if page_detections:
+                    # Create overlay with black boxes
+                    overlay_buffer = io.BytesIO()
+                    c = canvas.Canvas(overlay_buffer, pagesize=(
+                        float(page.mediabox.width),
+                        float(page.mediabox.height)
+                    ))
+
+                    # Draw black rectangles over detected PII
+                    c.setFillColor(black)
+                    for detection in page_detections:
+                        x, y, width, height = detection['bbox']
+                        c.rect(x, y, width, height, fill=1, stroke=0)
+
+                    c.save()
+                    overlay_buffer.seek(0)
+
+                    # Merge overlay with original page
+                    overlay_pdf = PdfReader(overlay_buffer)
+                    page.merge_page(overlay_pdf.pages[0])
+
+                writer.add_page(page)
+
+            # Write to buffer
+            output_buffer = io.BytesIO()
+            writer.write(output_buffer)
+            pdf_bytes = output_buffer.getvalue()
+            output_buffer.close()
+
+            logger.info(
+                "Visual redaction completed",
+                extra={"extra_fields": {"output_size": len(pdf_bytes)}},
+            )
+
+            return pdf_bytes
+
+        except Exception as e:
+            logger.error(f"Visual redaction failed: {e}", exc_info=True)
+            raise DocumentProcessingError(
+                f"Failed to apply visual redaction: {str(e)}",
+                {"file_path": str(self.file_path)}
+            )
+
+    def _find_text_coordinates_by_num(self, page_num: int, detections: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Find bounding boxes for detected PII text in PDF page using pdfplumber.
+
+        Args:
+            page_num: Page number (0-indexed)
+            detections: List of text detections
+
+        Returns:
+            List of detections with bounding box coordinates
+        """
+        page_detections = []
+
+        try:
+            if not hasattr(self, '_pdf') or not self._pdf:
+                logger.warning("pdfplumber not available for coordinate extraction")
+                return page_detections
+
+            # Get the correct page from pdfplumber
+            if page_num < len(self._pdf.pages):
+                plumber_page = self._pdf.pages[page_num]
+            else:
+                logger.warning(f"Page {page_num} not found in pdfplumber")
+                return page_detections
+
+            # Extract words with coordinates
+            words = plumber_page.extract_words()
+
+            # Get page dimensions
+            page_height = float(plumber_page.height)
+
+            # For each detection, find matching words
+            for detection in detections:
+                text_to_find = detection.get('text', '').strip()
+                if not text_to_find:
+                    continue
+
+                # Try to find exact match first
+                matched_words = []
+                detection_words = text_to_find.split()
+
+                for i, word_obj in enumerate(words):
+                    word_text = word_obj['text'].strip()
+
+                    # Check if this word starts a match
+                    if detection_words and word_text == detection_words[0]:
+                        # Try to match the full phrase
+                        potential_match = [word_obj]
+
+                        for j, detection_word in enumerate(detection_words[1:], start=1):
+                            if i + j < len(words) and words[i + j]['text'].strip() == detection_word:
+                                potential_match.append(words[i + j])
+                            else:
+                                break
+
+                        # If we matched all words
+                        if len(potential_match) == len(detection_words):
+                            matched_words = potential_match
+                            break
+
+                    # Also check for substring match in single word
+                    elif text_to_find in word_text:
+                        matched_words = [word_obj]
+                        break
+
+                # If we found matches, create bounding box
+                if matched_words:
+                    # Get bounding box that encompasses all matched words
+                    x0 = min(w['x0'] for w in matched_words)
+                    y0 = min(w['top'] for w in matched_words)
+                    x1 = max(w['x1'] for w in matched_words)
+                    y1 = max(w['bottom'] for w in matched_words)
+
+                    # Convert to PDF coordinates (bottom-left origin)
+                    # pdfplumber uses top-left origin, we need to convert
+                    pdf_y = page_height - y1
+                    width = x1 - x0
+                    height = y1 - y0
+
+                    # Add some padding
+                    padding = 2
+                    x0 -= padding
+                    pdf_y -= padding
+                    width += 2 * padding
+                    height += 2 * padding
+
+                    page_detections.append({
+                        'text': text_to_find,
+                        'bbox': (x0, pdf_y, width, height)
+                    })
+
+                    logger.debug(f"Found coordinates for '{text_to_find}': ({x0}, {pdf_y}, {width}, {height})")
+
+        except Exception as e:
+            logger.error(f"Failed to find text coordinates: {e}", exc_info=True)
+
+        return page_detections
 
     def get_page_count(self) -> int:
         """

@@ -193,7 +193,7 @@ class DocumentPipeline:
             # Step 5: Rebuild document
             logger.info("Rebuilding document")
             detections = result.detections if hasattr(result, "detections") else []
-            output_bytes = handler.rebuild(result.anonymized_text, detections)
+            output_bytes = handler.rebuild(result.anonymized_text, detections, mode=mode.value)
 
             # Step 6: Save output
             if save_output:

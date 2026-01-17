@@ -48,7 +48,7 @@ services:
       - ANONYMA_REDIS_PORT=6379
 
       # Authentication
-      - ANONYMA_AUTH_ENABLED=true
+      - ANONYMA_AUTH_ENABLED=false  # Set to true in production
       - ANONYMA_MASTER_API_KEY=${MASTER_API_KEY}
 
       # Rate Limiting
@@ -76,6 +76,8 @@ services:
     volumes:
       - ./packages:/app
       - api_temp:/tmp/anonyma_api
+      - model_cache:/root/.cache  # Cache for spaCy/HuggingFace models
+      - flair_cache:/root/.flair  # Cache for Flair models
     restart: unless-stopped
     networks:
       - anonyma-network
@@ -117,6 +119,8 @@ volumes:
   redis_data:
   postgres_data:
   api_temp:
+  model_cache:
+  flair_cache:
 
 networks:
   anonyma-network:

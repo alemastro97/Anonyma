@@ -235,7 +235,7 @@ class ImageDocument(BaseDocument):
 
         return text
 
-    def rebuild(self, anonymized_text: str, detections: List[Dict[str, Any]]) -> bytes:
+    def rebuild(self, anonymized_text: str, detections: List[Dict[str, Any]], mode: str = "redact") -> bytes:
         """
         Rebuild image with visual redaction.
 

@@ -152,7 +152,7 @@ class RedisManager:
             logger.error(f"Failed to delete job from Redis: {e}")
             return False
 
-    def update_job_status(self, job_id: str, status: str, progress: float = None) -> bool:
+    def update_job_status(self, job_id: str, status: str, progress: float = None, **kwargs) -> bool:
         """
         Update job status atomically.
 
@@ -160,6 +160,7 @@ class RedisManager:
             job_id: Job identifier
             status: New status
             progress: Optional progress value
+            **kwargs: Additional fields to update (e.g., error, result, output_file)
 
         Returns:
             True if updated successfully
@@ -175,6 +176,10 @@ class RedisManager:
             job_data["status"] = status
             if progress is not None:
                 job_data["progress"] = progress
+
+            # Update additional fields
+            for key, value in kwargs.items():
+                job_data[key] = value
 
             return self.save_job(job_id, job_data)
 
