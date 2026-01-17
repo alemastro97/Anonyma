@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anonyma - Document Anonymization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1.1em;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        select, input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f5f7fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .result-text {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            border-left-color: #f44336;
+            color: #c62828;
+        }
+
+        .success {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+            color: #2e7d32;
+        }
+
+        .download-btn {
+            background: #4caf50;
+            margin-top: 15px;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            opacity: 0.8;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 Anonyma</h1>
+            <p>Secure Document & Text Anonymization</p>
+        </div>
+
+        <div class="card">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('text')">Text Anonymization</button>
+                <button class="tab" onclick="switchTab('document')">Document Processing</button>
+            </div>
+
+            <!-- Text Anonymization Tab -->
+            <div id="text-tab" class="tab-content active">
+                <form id="text-form">
+                    <div class="form-group">
+                        <label for="text-input">Enter Text to Anonymize</label>
+                        <textarea id="text-input" rows="10" placeholder="Il sig. Mario Rossi (email: mario.rossi@example.com) abita a Milano..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="text-mode">Anonymization Mode</label>
+                        <select id="text-mode">
+                            <option value="redact">Redact (Block Characters)</option>
+                            <option value="substitute">Substitute (Fake Data)</option>
+                            <option value="visual_redact">Visual Redact (Heavy Blocks)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="text-language">Language</label>
+                        <select id="text-language">
+                            <option value="it">Italian</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="text-flair">
+                            <label for="text-flair" style="margin-bottom: 0;">Use Flair NER (slower but more accurate)</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn">Anonymize Text</button>
+                </form>
+
+                <div id="text-result"></div>
+            </div>
+
+            <!-- Document Processing Tab -->
+            <div id="document-tab" class="tab-content">
+                <form id="document-form">
+                    <div class="form-group">
+                        <label for="file-input">Select Document</label>
+                        <input type="file" id="file-input" accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg,.tiff">
+                        <small style="color: #666; display: block; margin-top: 8px;">
+                            Supported: PDF, Word (.docx), Excel (.xlsx), Images (PNG, JPG, TIFF)
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="doc-mode">Anonymization Mode</label>
+                        <select id="doc-mode">
+                            <option value="redact">Redact (Block Characters)</option>
+                            <option value="substitute">Substitute (Fake Data)</option>
+                            <option value="visual_redact">Visual Redact (Images Only)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="doc-language">Language</label>
+                        <select id="doc-language">
+                            <option value="it">Italian</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="doc-flair">
+                            <label for="doc-flair" style="margin-bottom: 0;">Use Flair NER (slower but more accurate)</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn">Process Document</button>
+                </form>
+
+                <div id="document-result"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by Anonyma | <a href="/docs" target="_blank">API Documentation</a></p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(`${tab}-tab`).classList.add('active');
+        }
+
+        // Text Anonymization
+        document.getElementById('text-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const text = document.getElementById('text-input').value;
+            const mode = document.getElementById('text-mode').value;
+            const language = document.getElementById('text-language').value;
+            const useFlair = document.getElementById('text-flair').checked;
+
+            const resultDiv = document.getElementById('text-result');
+            resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Processing...</p></div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/anonymize/text`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        mode: mode,
+                        language: language,
+                        use_flair: useFlair
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <h3>✓ Anonymization Complete</h3>
+                            <div class="result-text">${data.anonymized_text}</div>
+                            <div class="stats">
+                                <div class="stat">
+                                    <div class="stat-value">${data.detections_count}</div>
+                                    <div class="stat-label">Detections</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-value">${data.processing_time.toFixed(2)}s</div>
+                                    <div class="stat-label">Processing Time</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(data.error || 'Unknown error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>✗ Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+
+        // Document Processing
+        document.getElementById('document-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+
+            const mode = document.getElementById('doc-mode').value;
+            const language = document.getElementById('doc-language').value;
+            const useFlair = document.getElementById('doc-flair').checked;
+
+            const resultDiv = document.getElementById('document-result');
+            resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Uploading and processing document...</p></div>';
+
+            try {
+                // Upload document
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const uploadResponse = await fetch(
+                    `${API_BASE}/anonymize/document?mode=${mode}&language=${language}&use_flair=${useFlair}`,
+                    {
+                        method: 'POST',
+                        body: formData
+                    }
+                );
+
+                const uploadData = await uploadResponse.json();
+
+                if (!uploadData.success) {
+                    throw new Error(uploadData.error || 'Upload failed');
+                }
+
+                const jobId = uploadData.job_id;
+
+                // Poll for job status
+                const checkStatus = async () => {
+                    const statusResponse = await fetch(`${API_BASE}/jobs/${jobId}`);
+                    const statusData = await statusResponse.json();
+
+                    if (statusData.status === 'completed') {
+                        const result = statusData.result;
+                        resultDiv.innerHTML = `
+                            <div class="result success">
+                                <h3>✓ Document Processed Successfully</h3>
+                                <div class="stats">
+                                    <div class="stat">
+                                        <div class="stat-value">${result.detections_count}</div>
+                                        <div class="stat-label">Detections</div>
+                                    </div>
+                                    <div class="stat">
+                                        <div class="stat-value">${result.processing_time.toFixed(2)}s</div>
+                                        <div class="stat-label">Processing Time</div>
+                                    </div>
+                                    <div class="stat">
+                                        <div class="stat-value">${result.format.toUpperCase()}</div>
+                                        <div class="stat-label">Format</div>
+                                    </div>
+                                </div>
+                                <button class="btn download-btn" onclick="downloadFile('${jobId}')">
+                                    ⬇ Download Anonymized Document
+                                </button>
+                            </div>
+                        `;
+                    } else if (statusData.status === 'failed') {
+                        throw new Error(statusData.error || 'Processing failed');
+                    } else {
+                        // Still processing, check again
+                        setTimeout(checkStatus, 1000);
+                    }
+                };
+
+                checkStatus();
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>✗ Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+
+        function downloadFile(jobId) {
+            window.location.href = `${API_BASE}/jobs/${jobId}/download`;
+        }
+    </script>
+</body>
+</html>

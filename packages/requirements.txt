@@ -23,3 +23,26 @@ black>=23.0.0
 isort>=5.12.0
 mypy>=1.5.0
 ruff>=0.1.0
+
+# Document processing (Phase 2)
+# PDF support
+pdfplumber>=0.10.0
+PyPDF2>=3.0.0
+reportlab>=4.0.0
+
+# OCR support
+pdf2image>=1.16.0
+pytesseract>=0.3.10
+easyocr>=1.7.0
+
+# Image processing
+Pillow>=10.0.0
+opencv-python>=4.8.0
+
+# Office documents
+python-docx>=1.0.0
+openpyxl>=3.1.0
+python-pptx>=0.6.21
+
+# Email processing
+extract-msg>=0.45.0

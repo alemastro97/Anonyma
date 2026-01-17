@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  anonyma-api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+      - temp_files:/tmp/anonyma_api
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+volumes:
+  temp_files:
